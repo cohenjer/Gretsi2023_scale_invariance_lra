@@ -73,11 +73,9 @@ def run(**v):
     # decomposition
     if v["xp"]=="sparse":
         spvec = [v["sp"],0,0]
-        #rvec = [0,v["sp"]/2,v["sp"]/2] #old xp
         rvec = [0,v["sp"],v["sp"]]
     elif v["xp"]=="lowrank":
         spvec = [0,0,0]
-        #rvec = [v["sp"]/2,v["sp"]/2,v["sp"]/2] # old xp
         rvec = [v["sp"],v["sp"],v["sp"]]
     else:
         print("bad xp name")
@@ -106,7 +104,6 @@ def run(**v):
     out5 = non_negative_parafac_hals(data, rank=v["e_rank"], verbose=verbose, return_errors=True, sparsity_coefficients=spvec, epsilon=v["epsilon"], n_iter_max=v["n_iter"], rescale=False, init=copy(init_cp), ridge_coefficients=rvec, inner_iter_max=v["inner_iter"], inner_tol=v["inner_tol"])
 
     # printing and storing final errors
-    # TODO: careful, loss normalized by tensor norm
     print(f"loss for sparse ridge balanced: {out1[1][-1]}")
     print(f"loss for unregularized : {out2[1][-1]}")
     print(f"loss for sparse ridge no balance ++init: {out3[1][-1]}")

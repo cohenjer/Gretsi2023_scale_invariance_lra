@@ -8,8 +8,8 @@
 #### Installation de tensorly
 
 La version utilisée de tensorly est une version modifiée. Il ne faut pas utiliser pip, mais aller récupérer la bonne branche à cette addresse:
-` https://github.com/cohenjer/tensorly/tree/sparse_hals ` commit `97a168a32b1e7fa48b66e9b8e3d8872e7d0deeaf`
-ou bien le code en .zip référencé par le tag `Gretsi2023` à la même adresse.
+` https://github.com/cohenjer/tensorly/tree/sparse_hals ` commit `ba1e78605ce696aed7ae85e5e345aaefa045ff4b`
+ou bien le code en .zip référencé par le tag `Gretsi2023_rev` à la même adresse.
 Ensuite il faut installer le package localement avec
 `pip install -e .` dans la racine du tensorly téléchargé.
 
@@ -19,7 +19,7 @@ Installer les packages suivants:
 - numpy
 - tensorly-viz
 - plotly
-- shootout `https://github.com/cohenjer/shootout`
+- shootout (pip install shootout-opt)
 
 ## Utilisation
 
