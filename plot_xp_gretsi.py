@@ -2,7 +2,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.io as pio
 import plotly.graph_objects as go
-from shootout.methods.post_processors import df_to_convergence_df, median_convergence_plot
+from shootout.methods.post_processors import median_or_mean_and_errors
 pio.templates.default= "plotly_white"
 pio.kaleido.scope.mathjax = None
 
@@ -22,15 +22,19 @@ my_template.layout=dict(
 pio.templates["my_template"]=my_template
 pio.templates.default = "plotly_white+my_template"
 
-name = "./results/xp_12_27-03-2023"
+#name = "./results/xp_12_27-03-2023"
+name = "./results/xp_29-06-2023"
+
 
 df = pd.read_pickle(name)
 nb_seeds = df["seed"].max()+1 # get nbseed from data
 
-# Averaging
-df_mean_sparsity = df.groupby(["algorithm","sp","xp"], as_index=False)["sparsity"].mean()
-df_mean_fms = df.groupby(["algorithm","sp","xp"], as_index=False)["fms"].mean()
-df_mean_finalerr = df.groupby(["algorithm","sp","xp"], as_index=False)["final_errors"].mean()
+# Averaging and Error bars
+df_mean_sparsity = median_or_mean_and_errors(df, "sparsity", ["algorithm","sp","xp"])
+df_mean_fms = median_or_mean_and_errors(df, "fms", ["algorithm","sp","xp"])
+df_mean_finalerr = median_or_mean_and_errors(df, "final_errors", ["algorithm","sp","xp"])
+
+
 
 # Plotting sparsity vs reg value
 fig1 = px.line(df_mean_sparsity,
@@ -40,6 +44,8 @@ fig1 = px.line(df_mean_sparsity,
     color="algorithm",
     line_dash="algorithm",
     facet_row="xp",
+    error_y="sparsity_08",
+    error_y_minus="sparsity_02",
     #template=my_template,
     )
 fig1.add_hline(y=0.3*df["rank"][0]*df["dim"][0], row=1, annotation_text="Parcimonie cible", line=dict(dash='dot'))
@@ -58,6 +64,8 @@ fig2 = px.line(df_mean_fms,
     color="algorithm",
     line_dash="algorithm",
     facet_row="xp",
+    error_y="fms_08",
+    error_y_minus="fms_02",
     )
 fig2.update_yaxes(title_text="Factor Match Score")
 
@@ -66,9 +74,12 @@ fig3 = px.line(df_mean_finalerr,
     x="sp",
     y="final_errors",
     log_x=True,
+    log_y=True,
     color="algorithm",
     line_dash="algorithm",
     facet_row="xp",
+    error_y="final_errors_08",
+    error_y_minus="final_errors_02",
     )
 fig3.add_hline(y=0.5, row=1, annotation_text="solution nulle", line=dict(dash='dot'))
 fig3.add_hline(y=0.5, row=0, annotation_text="solution nulle", line=dict(dash='dot'))

@@ -1,5 +1,5 @@
 import tensorly as tl
-from tensorly.decomposition import non_negative_parafac_hals
+from tensorly.decomposition import non_negative_parafac_hals #check out the correct version
 import numpy as np
 import matplotlib.pyplot as plt
 from copy import deepcopy as copy
@@ -14,28 +14,13 @@ from shootout.methods.runners import run_and_track
 # hyperparams and others
 verbose=False
 algorithms = ['ridge balance', 'unregularized', 'ridge no-balance init++', 'sparse(*) no ridge', 'ridge no-balance']
-name = "./results/xp3_12_28-03-2023"
+name = "./results/xp_29-06-2023"
 
 # XP1,2: Comparison of behavior for sparse and low-rank inducing penalties, balance vs no balance (init++ or not) vs degenerate vs vanilla
-#variables = dict({
-    #"sp": [0,1e-5,1e-4,1e-3,5e-3,1e-2,5e-2,1e-1,5e-1,1,1e1,1e2,1e4],
-    #"xp": ["sparse", "lowrank"],
-    #"scale_init": True,
-    #"rank": 4,
-    #"e_rank": 6,
-    #"dim": 30,
-    #"noise": 0.001,
-    #"epsilon": 1e-16,
-    #"n_iter": 30, 
-    #"unbalance_init": None,
-    ##"seed": [np.randint() for i in range(5)]
-    #"seed": [12,68,415,786174,84]
-#})
-
-# XP3: scaling init impact on zero-locking
 variables = dict({
-    "sp": [1e-2],
-    "xp": ["sparse","lowrank"],
+    #"sp": [0,1e-5,1e-4,1e-3,5e-3,1e-2,5e-2,1e-1,5e-1,1,1e1,1e2,1e4], old xp
+    "sp": [0,1e-2,1e-1,1e-0,5e-0,1e1,5e1,1e2,1e3,1e4,1e5,1e6],
+    "xp": ["sparse", "lowrank"],
     "scale_init": True,
     "rank": 4,
     "e_rank": 6,
@@ -43,10 +28,28 @@ variables = dict({
     "noise": 0.001,
     "epsilon": 1e-16,
     "n_iter": 30, 
-    "unbalance_init": [1e-3,0.01,0.1,1,10,100,1000,1000],
+    "unbalance_init": None,
     #"seed": [np.randint() for i in range(5)]
-    "seed": [12,68,415,786174,84]
+    "seed": [12,68,415,786174,84,687445,2548,798955,124,174685],
+    "inner_iter": 20,
+    "inner_tol" : 0
 })
+
+# XP3: scaling init impact on zero-locking
+#variables = dict({
+    #"sp": [1e-2],
+    #"xp": ["sparse","lowrank"],
+    #"scale_init": True,
+    #"rank": 4,
+    #"e_rank": 6,
+    #"dim": 30,
+    #"noise": 0.001,
+    #"epsilon": 1e-16,
+    #"n_iter": 30, 
+    #"unbalance_init": [1e-3,0.01,0.1,1,10,100,1000,1000],
+    ##"seed": [np.randint() for i in range(5)]
+    #"seed": [12,68,415,786174,84]
+#})
 
 @run_and_track(algorithm_names=algorithms,name_store=name,**variables)
 def run(**v):
@@ -70,10 +73,12 @@ def run(**v):
     # decomposition
     if v["xp"]=="sparse":
         spvec = [v["sp"],0,0]
-        rvec = [0,v["sp"]/2,v["sp"]/2]
+        #rvec = [0,v["sp"]/2,v["sp"]/2] #old xp
+        rvec = [0,v["sp"],v["sp"]]
     elif v["xp"]=="lowrank":
         spvec = [0,0,0]
-        rvec = [v["sp"]/2,v["sp"]/2,v["sp"]/2]
+        #rvec = [v["sp"]/2,v["sp"]/2,v["sp"]/2] # old xp
+        rvec = [v["sp"],v["sp"],v["sp"]]
     else:
         print("bad xp name")
         return 
@@ -87,18 +92,18 @@ def run(**v):
         init = init_cp
 
     # Compute lambda max ratio heuristic
-    reg_amnt,_ = heuristic_regmax(init,data,spvec)
+    #reg_amnt,_ = heuristic_regmax(init,data,spvec)
 
     # Balanced method 
-    out1 = non_negative_parafac_hals(data, rank=v["e_rank"], verbose=verbose, return_errors=True, sparsity_coefficients=spvec, epsilon=v["epsilon"], n_iter_max=v["n_iter"], init=copy(init), ridge_coefficients=rvec)
+    out1 = non_negative_parafac_hals(data, rank=v["e_rank"], verbose=verbose, return_errors=True, sparsity_coefficients=spvec, epsilon=v["epsilon"], n_iter_max=v["n_iter"], init=copy(init), ridge_coefficients=rvec, inner_iter_max=v["inner_iter"], inner_tol=v["inner_tol"])
     # No reg
-    out2 = non_negative_parafac_hals(data, rank=v["e_rank"], verbose=verbose, return_errors=True, epsilon=v["epsilon"], n_iter_max=v["n_iter"], init=copy(init))
+    out2 = non_negative_parafac_hals(data, rank=v["e_rank"], verbose=verbose, return_errors=True, epsilon=v["epsilon"], n_iter_max=v["n_iter"], init=copy(init), inner_iter_max=v["inner_iter"], inner_tol=v["inner_tol"])
     # No balance, scaled balanced init
-    out3 = non_negative_parafac_hals(data, rank=v["e_rank"], verbose=verbose, return_errors=True, sparsity_coefficients=spvec, epsilon=v["epsilon"], n_iter_max=v["n_iter"], rescale=False, init=copy(init), ridge_coefficients=rvec)
+    out3 = non_negative_parafac_hals(data, rank=v["e_rank"], verbose=verbose, return_errors=True, sparsity_coefficients=spvec, epsilon=v["epsilon"], n_iter_max=v["n_iter"], rescale=False, init=copy(init), ridge_coefficients=rvec, inner_iter_max=v["inner_iter"], inner_tol=v["inner_tol"])
     # Degenerate (no l2), regular init
-    out4 = non_negative_parafac_hals(data, rank=v["e_rank"], verbose=verbose, return_errors=True, sparsity_coefficients=spvec, epsilon=v["epsilon"], n_iter_max=v["n_iter"], rescale=False, init=copy(init_cp), pop_l2=True)
+    out4 = non_negative_parafac_hals(data, rank=v["e_rank"], verbose=verbose, return_errors=True, sparsity_coefficients=spvec, epsilon=v["epsilon"], n_iter_max=v["n_iter"], rescale=False, init=copy(init_cp), pop_l2=True, inner_iter_max=v["inner_iter"], inner_tol=v["inner_tol"])
     # No balance regular init
-    out5 = non_negative_parafac_hals(data, rank=v["e_rank"], verbose=verbose, return_errors=True, sparsity_coefficients=spvec, epsilon=v["epsilon"], n_iter_max=v["n_iter"], rescale=False, init=copy(init_cp), ridge_coefficients=rvec)
+    out5 = non_negative_parafac_hals(data, rank=v["e_rank"], verbose=verbose, return_errors=True, sparsity_coefficients=spvec, epsilon=v["epsilon"], n_iter_max=v["n_iter"], rescale=False, init=copy(init_cp), ridge_coefficients=rvec, inner_iter_max=v["inner_iter"], inner_tol=v["inner_tol"])
 
     # printing and storing final errors
     # TODO: careful, loss normalized by tensor norm
@@ -137,7 +142,7 @@ def run(**v):
         "sparsity": [spfacs1,spfacs2,spfacs3,spfacs4,spfacs5], 
         "fms": [fms1,fms2,fms3,fms4,fms5],
         "true_sparsity": spfacst,
-        "reg_amnt": reg_amnt,
+        #"reg_amnt": reg_amnt,
         "final_errors": [out1[1][-1],out2[1][-1],out3[1][-1],out4[1][-1],out5[1][-1]],
         "errors": [out1[1],out2[1],out3[1],out4[1],out5[1]],
     })

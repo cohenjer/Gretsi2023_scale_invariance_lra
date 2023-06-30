@@ -22,6 +22,7 @@ cp_true = tl.cp_tensor.CPTensor((None,facs)) # CP tensor
 cp_true.normalize()
 data = cp_true.to_tensor() #+ 0.1*tl.tensor(rng.randn(dim,dim,dim))
 
+
 # decomposition
 
 out = non_negative_parafac_hals(data, rank=rank, verbose=True, return_errors=True, sparsity_coefficients=[0.1,0.1,0], epsilon=1e-8, ridge_coefficients=[0,0,0], n_iter_max=20)
